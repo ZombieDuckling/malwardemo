@@ -1,0 +1,19 @@
+# Malware demo: victim = Primary Doctor container; attacker = host machine
+# Run listener on host, then start this stack and trigger "open attachment" in container.
+
+services:
+  primary-doctor:
+    build:
+      context: ./victim
+      dockerfile: Dockerfile
+    container_name: primary-doctor
+    # So container can reach host listener via host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - ATTACKER_HOST=host.docker.internal
+      - ATTACKER_PORT=4444
+    ports:
+      - "8080:8080"
+    stdin_open: true
+    tty: true

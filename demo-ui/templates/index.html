@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Team Demo — RAT via Phishing</title>
+  <meta name="description" content="Authorized offensive security demo: remote access via malicious email attachment.">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="serverOffline" class="offline-banner" role="alert" hidden>
+    <span class="offline-dot" aria-hidden="true"></span>
+    <span>Demo server not running. Run: <code>cd demo-ui && .venv/bin/python app.py</code> (use <code>PORT=5050</code> if 5000 is in use). Then refresh.</span>
+  </div>
+
+  <header class="header" role="banner">
+    <h1>Red Team Demo: RAT via Phishing</h1>
+    <p class="subtitle">Authorized red team demo — real C2 listener, callbacks, and implant traffic</p>
+    <div class="connection-pill" id="connectionPill" aria-live="polite">
+      <span class="pill-dot" aria-hidden="true"></span>
+      <span id="connectionText">Checking server…</span>
+    </div>
+  </header>
+
+  <!-- Process pipeline: shows where we are in the attack -->
+  <nav class="process-pipeline" aria-label="Attack process">
+    <ol class="process-steps">
+      <li class="process-step" id="pipe1">
+        <span class="process-step-num">1</span>
+        <span class="process-step-name">Deploy target</span>
+      </li>
+      <li class="process-step" id="pipe2">
+        <span class="process-step-num">2</span>
+        <span class="process-step-name">Execute payload</span>
+      </li>
+      <li class="process-step" id="pipe3">
+        <span class="process-step-num">3</span>
+        <span class="process-step-name">Beacon</span>
+      </li>
+      <li class="process-step" id="pipe4">
+        <span class="process-step-num">4</span>
+        <span class="process-step-name">C2 session</span>
+      </li>
+    </ol>
+  </nav>
+
+  <main class="main-grid" role="main">
+    <section class="controls-column">
+      <div class="step-card" id="step1" aria-labelledby="step1-head">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">1</span>
+          <h2 id="step1-head">Deploy target</h2>
+          <span class="step-state" id="step1State" aria-live="polite">Pending</span>
+        </div>
+        <p class="step-desc">Start the target (victim) container. The C2 listener is already bound on 0.0.0.0:4444 waiting for callbacks.</p>
+        <div class="step-actions">
+          <button type="button" class="btn btn-primary" id="btnStartContainers" aria-describedby="step1Feedback">Deploy target container</button>
+          <span class="step-feedback" id="step1Feedback" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="step-card" id="step2" aria-labelledby="step2-head">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">2</span>
+          <h2 id="step2-head">Execute payload</h2>
+          <span class="step-state" id="step2State" aria-live="polite">Pending</span>
+        </div>
+        <p class="step-desc">Simulate the victim opening the phishing email and attachment. The “document” executes the implant, which will beacon out to C2.</p>
+        <div class="email-sim">
+          <div class="email-list" id="emailList">
+            <button type="button" class="email-row" id="emailRow" data-email aria-label="Open email: Patient lab results">
+              <span class="email-from">Lab Results &lt;noreply@medlab.example.com&gt;</span>
+              <span class="email-subject">Patient lab results – Action required</span>
+              <span class="email-attach">📎 patient_lab_results.pdf</span>
+            </button>
+          </div>
+          <div class="email-open" id="emailOpen" hidden>
+            <div class="email-meta">
+              <strong>From:</strong> Lab Results<br>
+              <strong>Subject:</strong> Patient lab results – Action required
+            </div>
+            <p class="email-body">Please review the attached lab results at your earliest convenience.</p>
+            <div class="attach-row">
+              <span>📎 patient_lab_results.pdf</span>
+              <button type="button" class="btn btn-danger" id="btnOpenAttachment" aria-describedby="step2Feedback">Open attachment (execute payload)</button>
+            </div>
+            <p class="step-feedback inline" id="step2Feedback" aria-live="polite"></p>
+          </div>
+        </div>
+        <p class="panel-link" id="victimGuiLink" hidden>
+          Or use target’s GUI: <a href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a>
+        </p>
+      </div>
+
+      <div class="step-card" id="step3" aria-labelledby="step3-head">
+        <div class="step-head">
+          <span class="step-num" aria-hidden="true">3</span>
+          <h2 id="step3-head">C2 session</h2>
+          <span class="step-state" id="step3State" aria-live="polite">Waiting for beacon</span>
+        </div>
+        <p class="step-desc">Once the implant calls back and the beacon is received, you have an interactive C2 session. Run commands below.</p>
+        <div class="c2-commands-panel compact">
+          <div class="c2-commands-title">Copy &amp; paste into terminal</div>
+          <pre class="c2-copy-block" id="c2CopyBlock" role="document" aria-label="Commands to try">id
+whoami
+pwd
+ls -la /app/inbox
+info
+download /app/inbox/patient_lab_results.pdf.py
+cat /etc/hostname
+exit</pre>
+        </div>
+        <div class="c2-box" role="application" aria-label="C2 terminal">
+          <div class="c2-status" id="listenerStatus">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="listenerText">—</span>
+          </div>
+          <div class="c2-banner" id="sessionBanner" hidden></div>
+          <div class="c2-output" id="terminalOutput" aria-live="polite"></div>
+          <div class="c2-input-wrap" id="inputWrap" hidden>
+            <span class="c2-prompt" aria-hidden="true">c2&gt;</span>
+            <label for="terminalInput" class="sr-only">Command input</label>
+            <input type="text" class="c2-input" id="terminalInput" placeholder="Paste a command and press Enter" autocomplete="off" aria-label="C2 command input">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right column: C2 activity (real traffic) + process view -->
+    <aside class="process-column" aria-label="Live C2 and target view">
+      <div class="process-panel attack-log-panel">
+        <div class="process-panel-header">
+          <h2>C2 activity</h2>
+          <span class="process-panel-badge">Live socket traffic</span>
+        </div>
+        <p class="process-panel-desc">Real C2 events: listener bind, callbacks from the implant, beacons, and commands. This is the actual attack traffic.</p>
+        <div class="attack-log" id="attackLog" aria-live="polite" role="log">
+          <div class="attack-log-placeholder" id="attackLogPlaceholder">Waiting for listener…</div>
+          <div class="attack-log-entries" id="attackLogEntries"></div>
+        </div>
+      </div>
+      <div class="process-panel">
+        <div class="process-panel-header">
+          <h2>Processes inside target</h2>
+          <span class="process-panel-badge" id="processRefreshLabel">Updating every 2s</span>
+        </div>
+        <p class="process-panel-desc">After you execute the payload, the implant process appears in this list. Live view from <code>docker top primary-doctor</code>.</p>
+        <pre class="process-output" id="containerActivityOutput" aria-live="polite">(waiting for target…)</pre>
+      </div>
+      <div class="process-panel">
+        <div class="process-panel-header">
+          <h2>Target workstation</h2>
+        </div>
+        <p class="process-panel-desc">Web UI running inside the target container. You can open the phishing email here instead.</p>
+        <iframe id="victimIframe" class="process-iframe" src="about:blank" title="Target container web GUI"></iframe>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>For authorized security education and testing only. Do not use against systems you do not own or have permission to test.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient lab results – Mail</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="workstation">
+  <header class="app-header">
+    <h1>Mail</h1>
+    <span class="user">dr_smith@hospital.local</span>
+  </header>
+  <nav class="sidebar">
+    <a href="/" class="nav-item">← Inbox</a>
+  </nav>
+  <main class="content read-view">
+    <div class="email-message">
+      <div class="message-header">
+        <strong>From:</strong> Lab Results &lt;noreply@medlab.example.com&gt;<br>
+        <strong>Subject:</strong> Patient lab results – Action required
+      </div>
+      <div class="message-body">
+        <p>Dear Dr. Smith,</p>
+        <p>Please review the attached lab results at your earliest convenience.</p>
+        <p>— MedLab</p>
+      </div>
+      <div class="attachment-box">
+        <span class="attachment-name">📎 patient_lab_results.pdf</span>
+        <button type="button" class="btn-open" id="btnOpen">Open attachment</button>
+        <span class="attachment-status" id="attachmentStatus"></span>
+      </div>
+    </div>
+  </main>
+  <script>
+    document.getElementById('btnOpen').onclick = function () {
+      var btn = this;
+      var status = document.getElementById('attachmentStatus');
+      btn.disabled = true;
+      status.textContent = 'Opening…';
+      status.className = 'attachment-status';
+      fetch('/api/open-attachment', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(function (r) { return r.json().then(function (d) { return { ok: d.ok, message: d.message, status: r.status }; }); })
+        .then(function (data) {
+          if (data.ok) {
+            status.textContent = 'Payload started. Connecting to C2…';
+            status.className = 'attachment-status success';
+          } else {
+            status.textContent = 'Error: ' + (data.message || 'Unknown');
+            status.className = 'attachment-status error';
+            btn.disabled = false;
+          }
+        })
+        .catch(function () {
+          status.textContent = 'Request failed. Is the server running?';
+          status.className = 'attachment-status error';
+          btn.disabled = false;
+        });
+    };
+  </script>
+</body>
+</html>
