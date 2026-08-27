@@ -114,9 +114,19 @@ The attachment is disguised as `patient_lab_results.pdf` but is actually a Pytho
 - **`demo-ui/`** – Visual demo: Flask app with integrated listener, victim panel (fake email), and attacker panel (C2 terminal). Run `python3 app.py` and open http://127.0.0.1:5000.
 - **`docker-compose.yml`** – Builds and runs the victim container; attacker is always the host.
 
-## Testing the demo UI
+## Testing
 
-From `demo-ui`, run the Playwright test (uses the webapp-testing skill):
+Run the lightweight smoke tests without Docker or a browser:
+
+```bash
+python3 -m venv /tmp/malwardemo-verify
+/tmp/malwardemo-verify/bin/python -m pip install --upgrade pip pytest -r demo-ui/requirements.txt -r victim/webapp/requirements.txt
+/tmp/malwardemo-verify/bin/python -m pytest -q
+```
+
+These tests exercise the Flask routes, safety headers, no-session command handling, and victim attachment trigger path with the payload execution mocked out.
+
+For full browser coverage from `demo-ui`, run the Playwright test (uses the webapp-testing skill):
 
 ```bash
 cd demo-ui

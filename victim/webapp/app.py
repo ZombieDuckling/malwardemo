@@ -8,7 +8,12 @@ import subprocess
 import sys
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(APP_DIR, "templates"),
+    static_folder=os.path.join(APP_DIR, "static"),
+)
 
 PAYLOAD_PY = "/app/inbox/patient_lab_results.pdf.py"
 
