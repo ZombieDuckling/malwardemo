@@ -12,7 +12,12 @@ from collections import deque
 from datetime import datetime, timezone
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(APP_DIR, "templates"),
+    static_folder=os.path.join(APP_DIR, "static"),
+)
 
 # C2 activity log: last N events (thread-safe), each {"ts": iso, "event": str, "detail": str}
 ATTACK_LOG_MAX = 100
